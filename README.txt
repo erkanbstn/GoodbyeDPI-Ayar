@@ -93,11 +93,14 @@ Dosyalar
   İkinci bir pencere açmaz.
 
 6-dns-duzelt.cmd
-  Modem, Discord ve Roblox adlarını sahte bir siteye çeviriyordu
-  (195.175.254.2). Bu yüzden launcher açılıyor ama resimler beyaz kalıyordu.
-  Bu dosya Ethernet ve Wi-Fi için DNS'i Cloudflare yapar:
-  1.1.1.1, 1.0.0.1 ve bunların IPv6 karşılıkları.
-  Bunu bir kez ayarladık. Modem ayarı geri gelirse yeniden çalıştır.
+  Superonline'da modem, Discord ve Roblox adlarını sahte bir siteye
+  çeviriyordu (195.175.254.2). Türk Telekom'da (2026-11-18'den beri) ise
+  bu adlara giden düz DNS sorgusu (1.1.1.1 dahil) hiç cevap almıyor ve
+  siteler açılmıyor. Şifreli DNS (DoH) ise sorunsuz çalışıyor.
+  Bu dosya Ethernet ve Wi-Fi için DNS'i Cloudflare yapar
+  (1.1.1.1, 1.0.0.1 ve IPv6 karşılıkları) ve bu adreslere DoH'u açar
+  (Windows 11 gerekir). Bunu bir kez çalıştırman yeter. Siteler yine
+  açılmazsa yeniden çalıştır.
 
 liste.txt
   GoodbyeDPI'nin dokunacağı adresler. Satır başına bir alan adı.

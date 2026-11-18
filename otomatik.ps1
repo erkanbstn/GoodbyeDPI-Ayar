@@ -57,13 +57,22 @@ function Test-Https {
 
 function Repair-RouterDns {
     $system = @(Resolve-DnsName discord.com -Type A -DnsOnly -ErrorAction SilentlyContinue | Where-Object { $_.Type -eq 'A' } | Select-Object -ExpandProperty IPAddress)
-    $direct = @(Resolve-DnsName discord.com -Type A -Server 1.1.1.1 -DnsOnly -ErrorAction SilentlyContinue | Where-Object { $_.Type -eq 'A' } | Select-Object -ExpandProperty IPAddress)
+    # Turk Telekom duz DNS sorgusunu dusuruyor; dogru cevabi sifreli (DoH) sorguyla al.
+    $direct = @()
+    try {
+        $doh = Invoke-RestMethod -Uri 'https://cloudflare-dns.com/dns-query?name=discord.com&type=A' -Headers @{ accept = 'application/dns-json' } -TimeoutSec 8
+        $direct = @($doh.Answer | Where-Object { $_.type -eq 1 } | ForEach-Object { $_.data })
+    } catch { }
     if ($system.Count -gt 0 -and $direct.Count -gt 0 -and (@($system | Where-Object { $direct -contains $_ })).Count -gt 0) {
         return
     }
     $alias = (Get-NetIPConfiguration | Where-Object { $_.NetAdapter.Status -eq 'Up' -and $_.IPv4DefaultGateway } | Select-Object -First 1).InterfaceAlias
     if (-not $alias) { return }
-    Write-Host "Modem, Discord adresini sahte siteye ceviriyor. DNS Cloudflare olarak ayarlaniyor."
+    Write-Host "Discord adresi cozulmuyor veya sahte. DNS Cloudflare ve sifreli (DoH) olarak ayarlaniyor."
+    foreach ($a in '1.1.1.1', '1.0.0.1', '2606:4700:4700::1111', '2606:4700:4700::1001') {
+        try { Set-DnsClientDohServerAddress -ServerAddress $a -DohTemplate 'https://cloudflare-dns.com/dns-query' -AutoUpgrade $true -AllowFallbackToUdp $false -ErrorAction Stop }
+        catch { Add-DnsClientDohServerAddress -ServerAddress $a -DohTemplate 'https://cloudflare-dns.com/dns-query' -AutoUpgrade $true -AllowFallbackToUdp $false -ErrorAction SilentlyContinue }
+    }
     & netsh.exe interface ipv4 set dnsservers "$alias" static 1.1.1.1 primary | Out-Null
     & netsh.exe interface ipv4 add dnsservers "$alias" 1.0.0.1 index=2 | Out-Null
     & netsh.exe interface ipv6 set dnsservers "$alias" static 2606:4700:4700::1111 primary | Out-Null
